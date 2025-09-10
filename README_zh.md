@@ -73,6 +73,7 @@ python app.py
        ├── view.html       # 查看记录模板
        ├── save_result.html # 保存结果模板
        └── about.html      # 关于页面模板
+   ```
     
 ##注意事项##
 数据存储: 所有笔记保存在本地的notes.txt文件中
