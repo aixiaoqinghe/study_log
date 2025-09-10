@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+
+{% block title %}<个人学习足迹记录薄>{% endblock %}
+
+{% block content %}
+<h1>已经保存的记录</h1>
+
+<div style="color: #666;font-size: 12px;margin-bottom: 15px;">
+    记录说明：最右侧为创建时间，中间为最新更新时间
+</div>
+
+{% if message %}
+    <div style="color: green;margin-bottom: 10px;">{{message}}</div>
+{% endif %}
+
+{% if file_exists %}
+    {% if notes %}
+        <div class="notes-container">
+            <form id="deleteForm" method="post" action="/delete">
+            {% for note in notes %}
+                <div class="note-item">
+                    <span class="note-content">{{note.content}}</span>
+
+                    <!-- 勾选框将在点击删除按钮后显示，放在中间位置-->
+                    <input type="checkbox" name="selected_notes" value="{{loop.index0}}" class="note-checkbox" style="display: none;">
+
+                    {% if note.update_time and note.update_time != note.create_time %}
+                    <span class="note-update-time">{{note.update_time}}</span>
+                    {% endif %}
+
+                    {% if note.create_time %}
+                    <span class="note-create-time">{{note.create_time}}</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </form>
+        </div>
+    {% else %}
+        <p>记录薄文件为空</p>    
+    {% endif %}
+{% else %}
+        <p>{{content}}</p>
+{% endif %}
+
+<!-- 将删除按钮和返回首页按钮放在同一行 -->
+<div style="margin-bottom: 10px;text-align: right;">
+    <button id="deleteButton" class="btn delete-btn">删除</button>
+    <button id="confirmDeleteButton" class="btn confirm-delete-btn" style="display: none;">确认删除</button>
+    <button id="editButton" class="btn edit-btn">修改</button>
+    <button id="confirmEditButton" class="btn confirm-edit-btn" style="display:none;">确认修改</button>
+    <a href="/" class="btn-back">
+        <button type="button" class="btn">返回首页</button>
+    </a>
+</div>
+
+<form id="editForm" method="post" action="/edit" style="display: none;">
+    <input type="hidden" id="editIndex" name="edit_index" value="">
+    <div style="margin: 20px 0;">
+        <label for="editContent">修改内容：</label>
+        <textarea id="editContent" name="edit_content" rows="3" cols="50"></textarea>
+    </div>
+    <button type="submit" class="btn">确认修改</button>
+</form>
+
+
+{% endblock %}
+
+{% block css %}
+<style>
+/* 基础样式 */
+.notes-container {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* 笔记条目动态样式 */
+.note-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+    margin-bottom: 5px;
+    background-color: white;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s ease forwards;
+    cursor: default;
+}
+
+/* 笔记条目的交错动画 - 增加更多变化 */
+.note-item:nth-child(1n) { animation-delay: 0.05s; }
+.note-item:nth-child(2n) { animation-delay: 0.1s; }
+.note-item:nth-child(3n) { animation-delay: 0.15s; }
+.note-item:nth-child(4n) { animation-delay: 0.2s; }
+.note-item:nth-child(5n) { animation-delay: 0.25s; }
+.note-item:nth-child(6n) { animation-delay: 0.3s; }
+
+
+/* 笔记条目的交错动画 */
+.note-item:nth-child(odd) {
+    background-color: white;
+}
+
+.note-item:nth-child(even) {
+    background-color: #fafafa;
+    animation-delay: 0.2s;
+}
+
+.note-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* 笔记悬停效果 */
+.note-item:hover {
+    background-color: #fff8e1 !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 笔记内容 */
+.note-content {
+    flex: 1;
+    margin-right: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.note-item:hover .note-content {
+    color: #1976D2;
+}
+
+/* 时间戳样式 */
+.note-time {
+    color: #666;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* 复选框样式 */
+.note-checkbox {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.note-checkbox:hover {
+    transform: translateX(-50%) scale(1.2);
+}
+
+/* 更新时间样式 */
+.note-update-time {
+    color: #9C27B0; /* 紫色表示更新时间 */
+    font-size: 12px;
+    white-space: nowrap;
+    margin-right: 15px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.note-item:hover .note-update-time {
+    color: #7B1FA2;
+}
+
+/* 创建时间样式 */
+.note-create-time {
+    color: #666;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+.note-item:hover .note-create-time {
+    color: #424242;
+}
+
+/* 返回按钮样式 */
+.btn-back {
+    display: inline-block;
+    margin-top: 20px;
+}
+
+/* 按钮基础样式 */
+.btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+/* 按钮悬停效果 */
+.btn:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover:before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 删除按钮样式 */
+.delete-btn {
+    background-color: #f44336;
+}
+
+.delete-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* 确认删除按钮样式 */
+.confirm-delete-btn {
+    background-color: #ff9800;
+    margin-left: 10px;
+}
+
+.confirm-delete-btn:hover {
+    background-color: #e68a00;
+}
+
+/* 编辑按钮样式 */
+.edit-btn {
+    background-color: #2196F3;
+    margin-left: 10px;
+}
+
+.edit-btn:hover {
+    background-color: #0b7dda;
+}
+
+/* 确认编辑按钮样式 */
+.confirm-edit-btn {
+    background-color: #9C27B0;
+    margin-left: 10px;
+}
+
+.confirm-edit-btn:hover {
+    background-color: #7b1fa2;
+}
+
+/* 表单样式 */
+#editForm {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+#editForm.show {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 20px;
+}
+
+#editContent {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    resize: vertical;
+}
+
+#editContent:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    transform: scale(1.01);
+}
+
+/* 动画定义 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* 加载动画 */
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 加载指示器 */
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .note-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .note-checkbox {
+        position: static;
+        transform: none;
+        margin: 5px 0;
+    }
+    
+    .note-checkbox:hover {
+        transform: scale(1.2);
+    }
+    
+    .btn {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+
+</style>
+{% endblock %}
+
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded',function() {
+        //获取所有复选框
+        const deleteButton = document.getElementById('deleteButton');
+        const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+        const editButton = document.getElementById('editButton');
+        const confirmEditButton = document.getElementById('confirmEditButton');
+        const checkboxes = document.querySelectorAll('.note-checkbox');
+        const deleteForm = document.getElementById('deleteForm');
+        const editForm = document.getElementById('editForm');
+        const editIndex = document.getElementById('editIndex');
+        const editContent = document.getElementById('editContent');
+
+        //点击删除按钮显示勾选框和确认按钮
+        deleteButton.addEventListener('click',function() {
+            //隐藏编辑相关功能
+            editForm.style.display = 'none';
+            confirmEditButton.style.display = 'none';
+
+            //显示删除相关功能
+            checkboxes.forEach(checkbox => {
+                checkbox.style.display = 'block';
+                checkbox.checked = false;
+            });
+            deleteButton.style.display = 'none';
+            confirmDeleteButton.style.display = 'inline-block';
+            editButton.style.display = 'none';
+        });
+
+        //点击修改按钮显示勾选框和确认修改按钮
+        editButton.addEventListener('click',function() {
+            //隐藏删除相关元素
+            confirmDeleteButton.style.display = 'none';
+
+            //显示修改相关元素
+            checkboxes.forEach(checkbox => {
+                checkbox.style.display = 'block';
+                checkbox.checked = false;
+            });
+            editButton.style.display = 'none';
+            confirmEditButton.style.display = 'inline-block';
+        });
+
+
+        //点击确认删除按钮
+        confirmDeleteButton.addEventListener('click', function() {
+            const checkBoxes = document.querySelectorAll('.note-checkbox:checked');
+
+            if (checkBoxes.length === 0) {
+                alert('请先选择要删除的记录！');
+                return;
+            }
+
+            //收集选中的内容
+            let selectedContents = [];
+            //收集选中的内容
+            checkBoxes.forEach(checkbox => {
+                const noteItem = checkbox.closest('.note-item');
+                const content = noteItem.querySelector('.note-content').textContent;
+                //将内容添加到数组中
+                selectedContents.push(content);
+            });
+
+        //显示确认删除对话框
+            if (confirm(`请问确认删除以下内容吗?\n${selectedContents.join('\n')}`)) {
+                //提交表单进行删除
+            deleteForm.submit();
+            } else {
+                //如果取消删除，恢复按钮状态
+                resetButtons();
+            }
+        });
+
+        //点击确认修改按钮
+        confirmEditButton.addEventListener('click', function() {
+            const checkBoxes = document.querySelectorAll('.note-checkbox:checked');
+
+            if (checkBoxes.length === 0) {
+                alert('请先选择要修改的记录！');
+                return;
+            } else if (checkBoxes.length > 1) {
+                alert('一次只能修改一条记录！');
+                return;
+            }
+
+            //获取选中的记录索引和内容
+            const checkbox = checkBoxes[0];
+            const index = checkbox.value;
+            const noteItem = checkbox.closest('.note-item');
+            const content = noteItem.querySelector('.note-content').textContent;
+
+            //设置编程表单的值
+            editIndex.value = index;
+            editContent.value = content;
+
+            //显示编辑表单
+            editForm.style.display = 'block'; // 确保表单可见
+            editForm.classList.add('show');   // 添加动画效果
+            confirmEditButton.style.display = 'none';
+
+            //隐藏复选框
+            checkboxes.forEach(cb => {
+                cb.style.display = 'none';
+            });
+        });
+
+
+        //点击记录项也可以选中/取消选中复选框
+        const noteItems = document.querySelectorAll('.note-item');
+        noteItems.forEach(item => {
+            item.addEventListener('click',function(e) {
+                //如果点击的不是复选框本身
+                if (!e.target.classList.contains('note-checkbox')) {
+                    const checkbox = this.querySelector('.note-checkbox');
+                    if (checkbox.style.display !== 'none') {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                }
+            });
+        });
+
+    //重置按钮状态的辅助函数
+    function resetButtons() {
+        checkboxes.forEach(checkbox => {
+            checkbox.style.display = 'none';
+            checkbox.checked = false;
+        });
+        deleteButton.style.display = 'inline-block';
+        confirmDeleteButton.style.display = 'none';
+        editButton.style.display = 'inline-block';
+        confirmEditButton.style.display = 'none';
+        editForm.style.display = 'none';
+    }
+});
+
+</script>
+
+{% endblock %}

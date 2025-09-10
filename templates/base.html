@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}默认标题{% endblock %}</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            cursor: none;
+        }
+        
+        /* 流星主光标 */
+        .cursor {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background-color: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px 3px rgba(255, 255, 255, 0.9), 0 0 30px 8px rgba(255, 215, 0, 0.7);
+            transition: all 0.3s ease; /* 添加过渡效果使颜色变化更平滑 */
+        }
+        
+        /* 流星拖尾效果 */
+        .trail {
+            position: fixed;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,215,0,0.9), rgba(255,255,255,1));
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform-origin: left center;
+            box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.5);
+            transition: all 0.3s ease; /* 添加过渡效果使颜色变化更平滑 */
+        }
+        /* 粒子效果 */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9997;
+            animation: fallDown 1s ease-in-out forwards;
+        }
+    
+        /* 微末掉下来的动画 */
+        @keyframes fallDown {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, 50px) scale(0.3);
+                opacity: 0;
+            }
+        }
+        
+        /* 页面全局容器 */
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 鼠标悬停在可交互元素上时的效果 */
+        a, button, input, textarea {
+            transition: all 0.3s ease;
+        }
+    </style>
+    {% block css %}
+    {% endblock %}
+</head>
+<body>
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer style="margin-top: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;">
+        <p>个人学习足迹记录薄 &copy;2025</p>
+        <p>一个用于记录学习足迹的简单应用</p>
+        <p style="margin-top: 10px;">
+                <a href="/about" style="color: #007bff; text-decoration: none;">关于</a> | 
+                <a href="/" style="color: #007bff; text-decoration: none;">首页</a>
+        </p>    
+    </footer>
+    {% block js %}{% endblock %}
+    
+    <!-- 流星鼠标效果脚本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 创建流星主光标
+            const cursor = document.createElement('div');
+            cursor.classList.add('cursor');
+            document.body.appendChild(cursor);
+            
+            // 跟踪上一次鼠标位置，用于计算移动方向
+            let lastX = 0;
+            let lastY = 0;
+            let mouseMoved = false;
+            
+            // 颜色数组 - 包含多种不同颜色
+            const colors = [
+                {base: '#ff0000', glow: 'rgba(255, 0, 0, 0.7)'},     // 红色
+                {base: '#ff6600', glow: 'rgba(255, 102, 0, 0.7)'},   // 橙色
+                {base: '#ffff00', glow: 'rgba(255, 255, 0, 0.7)'},   // 黄色
+                {base: '#00ff00', glow: 'rgba(0, 255, 0, 0.7)'},     // 绿色
+                {base: '#00ffff', glow: 'rgba(0, 255, 255, 0.7)'},   // 青色
+                {base: '#0000ff', glow: 'rgba(0, 0, 255, 0.7)'},     // 蓝色
+                {base: '#9900ff', glow: 'rgba(153, 0, 255, 0.7)'},   // 紫色
+                {base: '#ff00ff', glow: 'rgba(255, 0, 255, 0.7)'},   // 粉色
+                {base: '#ff9999', glow: 'rgba(255, 153, 153, 0.7)'}, // 浅红
+                {base: '#99ff99', glow: 'rgba(153, 255, 153, 0.7)'}, // 浅绿
+                {base: '#9999ff', glow: 'rgba(153, 153, 255, 0.7)'}, // 浅蓝
+                {base: '#ff99ff', glow: 'rgba(255, 153, 255, 0.7)'}  // 浅粉
+            ];
+            
+            // 当前使用的颜色索引
+            let currentColorIndex = 0;
+            // 颜色变化的时间间隔（毫秒）
+            let colorChangeInterval;
+            const colorChangeSpeed = 2000; // 每3秒自动切换一次颜色
+            
+            // 存储拖尾元素的数组
+            const trails = [];
+            const maxTrails = 15; // 最多保留的拖尾数量，增加数量使效果更连续
+            
+            // 获取当前颜色
+            function getCurrentColor() {
+                return colors[currentColorIndex];
+            }
+            
+            // 切换到下一个颜色
+            function cycleNextColor() {
+                // 随机选择一个不同的颜色索引
+            let newColorIndex;
+            do {
+                newColorIndex = Math.floor(Math.random() * colors.length);
+            } while (newColorIndex === currentColorIndex);
+            
+            currentColorIndex = newColorIndex;
+            updateCursorColor();
+        }
+           
+            
+            // 更新光标颜色
+            function updateCursorColor() {
+                const color = getCurrentColor();
+                
+                // 更新主光标基础颜色
+                cursor.style.backgroundColor = color.base;
+                
+                // 根据移动速度改变主光标的亮度和颜色
+                const speed = 50; // 默认速度值，实际使用时会被鼠标移动事件更新
+                cursor.style.boxShadow = `0 0 ${speed/4}px ${speed/8}px rgba(255, 255, 255, 0.9), 0 0 ${speed/2}px ${speed/16}px ${color.glow}`;
+            }
+
+             // 创建微末粒子效果
+        function createParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // 随机粒子大小
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${x + (Math.random() - 0.5) * 20}px`;
+                particle.style.top = `${y + (Math.random() - 0.5) * 20}px`;
+                
+                // 随机透明度和颜色渐变
+                const alpha = Math.random() * 0.5 + 0.5;
+                particle.style.background = `radial-gradient(circle, ${color.base}, rgba(255,255,255,${alpha}))`;
+                particle.style.boxShadow = `0 0 3px ${color.glow}`;
+                
+                // 随机旋转和动画延迟
+                const rotation = Math.random() * 360;
+                const delay = Math.random() * 0.3;
+                particle.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                document.body.appendChild(particle);
+                
+                // 动画结束后移除粒子
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1000 + delay * 1000);
+            }
+        }
+            
+            // 鼠标移动事件处理 - 流星效果
+            document.addEventListener('mousemove', function(e) {
+                const posX = e.clientX;
+                const posY = e.clientY;
+                
+                // 计算鼠标移动速度和方向
+                const dx = posX - lastX;
+                const dy = posY - lastY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 只有当鼠标有明显移动时才创建新的拖尾
+                if (distance > 1) { // 降低阈值，更敏感
+                    mouseMoved = true;
+                    
+                    // 创建新的拖尾元素
+                    createTrail(posX, posY, dx, dy, distance);
+
+                    // 根据速度创建粒子效果
+                    if (distance > 5) {
+                        const color = getCurrentColor();
+                        const particleCount = Math.min(Math.floor(distance / 3), 6);
+                        createParticles(posX, posY, particleCount, color);
+                }
+                    
+                    // 更新最后位置
+                    lastX = posX;
+                    lastY = posY;
+                }
+                
+                // 主光标立即跟随
+                cursor.style.left = posX + 'px';
+                cursor.style.top = posY + 'px';
+                
+                // 根据移动速度改变主光标的亮度
+                const color = getCurrentColor();
+                const speed = Math.min(distance * 8, 150);
+                cursor.style.boxShadow = `0 0 ${speed/4}px ${speed/8}px rgba(255, 255, 255, 0.9), 0 0 ${speed/2}px ${speed/16}px ${color.glow}`;
+            });
+            
+            // 创建拖尾元素的函数
+            function createTrail(x, y, dx, dy, distance) {
+                // 计算角度
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                
+                // 根据移动速度调整拖尾长度，增加长度使效果更明显
+                const trailLength = Math.min(distance * 3, 120);
+                
+                // 获取当前颜色
+                const color = getCurrentColor();
+                
+                // 创建新的拖尾元素
+                const trail = document.createElement('div');
+                trail.classList.add('trail');
+                trail.style.width = trailLength + 'px';
+                trail.style.left = x + 'px';
+                trail.style.top = y + 'px';
+                trail.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+                trail.style.opacity = '1'; // 初始不透明度更高
+                
+                // 设置拖尾颜色为当前颜色的渐变
+                trail.style.background = `linear-gradient(90deg, rgba(255,255,255,0.2), ${color.glow.replace('0.7', '0.9')}, rgba(255,255,255,1))`;
+                trail.style.boxShadow = `0 0 8px 1px ${color.glow}`;
+                
+                // 将拖尾添加到页面和数组
+                document.body.appendChild(trail);
+                trails.push(trail);
+                
+                // 拖尾消失动画
+                let opacity = 0.8;
+                const fadeInterval = setInterval(() => {
+                    opacity -= 0.04; // 降低消失速度，拖尾更持久
+                    if (opacity <= 0) {
+                        clearInterval(fadeInterval);
+                        if (trail.parentNode) {
+                            trail.parentNode.removeChild(trail);
+                        }
+                        // 从数组中移除
+                        const index = trails.indexOf(trail);
+                        if (index > -1) {
+                            trails.splice(index, 1);
+                        }
+                    } else {
+                        trail.style.opacity = opacity;
+                        // 拖尾逐渐变细
+                        trail.style.width = (trailLength * opacity * 0.8) + 'px';
+                    }
+                }, 30);
+                
+                // 限制拖尾数量，防止性能问题
+                if (trails.length > maxTrails) {
+                    const oldestTrail = trails.shift();
+                    if (oldestTrail.parentNode) {
+                        oldestTrail.parentNode.removeChild(oldestTrail);
+                    }
+                }
+            }
+            
+            // 鼠标离开页面时隐藏光标
+            document.addEventListener('mouseleave', function() {
+                cursor.style.opacity = '0';
+                // 清除所有拖尾
+                trails.forEach(trail => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                });
+                trails.length = 0;
+                mouseMoved = false;
+            });
+            
+            // 鼠标进入页面时显示光标
+            document.addEventListener('mouseenter', function() {
+                cursor.style.opacity = '1';
+                lastX = event.clientX;
+                lastY = event.clientY;
+                
+                // 开始自动切换颜色
+                colorChangeInterval = setInterval(cycleNextColor, colorChangeSpeed);
+            });
+            
+            // 为可交互元素添加悬停效果
+            const interactiveElements = document.querySelectorAll('a, button, input, textarea');
+            
+            interactiveElements.forEach(element => {
+                // 悬停时的特殊效果
+                element.addEventListener('mouseenter', function() {
+                    const color = getCurrentColor();
+                    cursor.style.width = '16px';
+                    cursor.style.height = '16px';
+                    cursor.style.boxShadow = `0 0 20px 7px rgba(255, 255, 255, 1), 0 0 35px 12px ${color.glow.replace('0.7', '0.8')}`;
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    cursor.style.width = '12px';
+                    cursor.style.height = '12px';
+                });
+            });
+            
+            // 初始化颜色变化定时器
+            colorChangeInterval = setInterval(cycleNextColor, colorChangeSpeed);
+        });
+    </script>
+</body>
+</html>

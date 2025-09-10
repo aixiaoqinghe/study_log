@@ -1,0 +1,17 @@
+#忽略笔记数据文件
+notes.txt
+
+#忽略Python编译文件
+__pycache__/
+*.pyc
+
+#忽略环境变量和敏感信息
+.env
+.env.local
+
+#忽略IDE配置文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
