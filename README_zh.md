@@ -75,7 +75,7 @@ python app.py
        └── about.html      # 关于页面模板
    ```
     
-##注意事项##
+###注意事项
 数据存储: 所有笔记保存在本地的notes.txt文件中
 隐私保护: notes.txt文件已添加到.gitignore，不会被上传到GitHub
 示例文件: notes_example.txt提供了文件格式参考，但不包含实际数据
