@@ -61,25 +61,25 @@ python app.py
 4.在确认对话框中，核对删除信息，点击"确定"完成删除
 
 **项目结构**
-```plainText
-study_log/
-├── app.py           # 应用主程序
-├── notes.txt        # 笔记数据文件（不上传到GitHub）
-├── notes_example.txt # 示例数据文件，展示数据格式
-├── .gitignore       # Git忽略文件配置
-└── templates/       # HTML模板文件夹
-    ├── base.html       # 基础模板
-    ├── home.html       # 首页模板
-    ├── view.html       # 查看记录模板
-    ├── save_result.html # 保存结果模板
-    └── about.html      # 关于页面模板
+   ```plainText
+   study_log/
+   ├── app.py           # 应用主程序
+   ├── notes.txt        # 笔记数据文件（不上传到GitHub）
+   ├── notes_example.txt # 示例数据文件，展示数据格式
+   ├── .gitignore       # Git忽略文件配置
+   └── templates/       # HTML模板文件夹
+       ├── base.html       # 基础模板
+       ├── home.html       # 首页模板
+       ├── view.html       # 查看记录模板
+       ├── save_result.html # 保存结果模板
+       └── about.html      # 关于页面模板
     
-**注意事项**
+##注意事项##
 数据存储: 所有笔记保存在本地的notes.txt文件中
 隐私保护: notes.txt文件已添加到.gitignore，不会被上传到GitHub
 示例文件: notes_example.txt提供了文件格式参考，但不包含实际数据
 首次运行: 应用首次运行时会自动创建空的notes.txt文件
 
 
-致谢
+**致谢**
 感谢使用个人学习足迹记录薄！希望它能帮助你更好地记录和整理学习足迹。
